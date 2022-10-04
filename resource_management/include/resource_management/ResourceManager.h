@@ -318,6 +318,7 @@ void ResourceManager<StateMachineType,StateMachineExtractType,InputDataTypes...>
           std_msgs::String active_buffer_msg;
           active_buffer_msg.data = active_buffer;
           _activeBufferPublisher.publish(active_buffer_msg);
+          std::cout << "[" << ros::Time::now() << "] Publish on: " << active_buffer << std::endl;
         }
       }
 
