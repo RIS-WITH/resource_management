@@ -12,16 +12,16 @@ namespace resource_management {
 class ReactiveBuffer : public BufferPriority
 {
 public:
-  ReactiveBuffer(const std::string& name);
+  explicit ReactiveBuffer(const std::string& name);
 
-  std::string getName() { return name_; }
+  const std::string& getName() const { return name_; }
 
   void setData(std::shared_ptr<MessageAbstraction> data);
-  std::shared_ptr<MessageAbstraction> getData();
-  std::shared_ptr<MessageAbstraction> operator()();
+  std::shared_ptr<MessageAbstraction> getData() const;
+  std::shared_ptr<MessageAbstraction> operator()() const;
 
   void published() { has_been_published_ = true; }
-  bool hasItBeenPublished() { return has_been_published_; }
+  bool hasItBeenPublished() const { return has_been_published_; }
 
 private:
   std::string name_;

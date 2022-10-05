@@ -71,7 +71,7 @@ template<class MessageType>
 class MetaStateMachineClient
 {
 public:
-  MetaStateMachineClient(std::string name, bool spin_thread = true);
+  explicit MetaStateMachineClient(const std::string& name, bool spin_thread = true);
   ~MetaStateMachineClient();
 
   void waitForServer(ros::Duration timeout = ros::Duration(-1));
@@ -109,11 +109,10 @@ private:
 };
 
 template<class MessageType>
-MetaStateMachineClient<MessageType>::MetaStateMachineClient(std::string name, bool spin_thread)
+MetaStateMachineClient<MessageType>::MetaStateMachineClient(const std::string& name, bool spin_thread):
+                                                            name_("/" + name),
+                                                            id_(-1)
 {
-  name_ = "/" + name;
-  id_ = -1;
-
   init(nh_, spin_thread);
 
   register_topic_name_ = name_ + "/state_machines_register";

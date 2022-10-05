@@ -2,7 +2,7 @@
 
 namespace resource_management {
 
-StateMachineState::StateMachineState(std::string id, bool partially_defined)
+StateMachineState::StateMachineState(const std::string& id, bool partially_defined)
 {
   id_ = id;
   partially_defined_ = partially_defined;
@@ -64,7 +64,7 @@ transtition_state_t StateMachineState::update(StateMachineState** current_state,
   return transtition_state;
 }
 
-bool StateMachineState::endState()
+bool StateMachineState::endState() const
 {
   if(transitions_conditions_.size() == 0)
     return true;

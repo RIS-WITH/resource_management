@@ -16,12 +16,12 @@ void ReactiveBuffer::setData(std::shared_ptr<MessageAbstraction> data)
   has_been_published_ = false;
 }
 
-std::shared_ptr<MessageAbstraction> ReactiveBuffer::getData()
+std::shared_ptr<MessageAbstraction> ReactiveBuffer::getData() const
 {
   return data_;
 }
 
-std::shared_ptr<MessageAbstraction> ReactiveBuffer::operator()()
+std::shared_ptr<MessageAbstraction> ReactiveBuffer::operator()() const
 {
   return data_;
 }

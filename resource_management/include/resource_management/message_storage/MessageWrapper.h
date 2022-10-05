@@ -12,7 +12,7 @@ class MessageWrapper : public MessageAbstraction
 {
 public:
   MessageWrapper();
-  MessageWrapper(const T& data);
+  explicit MessageWrapper(const T& data);
 
   MessageWrapper& operator=(const T& data);
   MessageWrapper& operator=(const MessageWrapper& other);
@@ -36,10 +36,8 @@ MessageWrapper<T>::MessageWrapper()
 }
 
 template<typename T>
-MessageWrapper<T>::MessageWrapper(const T& data)
-{
-  data_ = data;
-}
+MessageWrapper<T>::MessageWrapper(const T& data) : data_(data)
+{}
 
 template<typename T>
 MessageWrapper<T>& MessageWrapper<T>::operator=(const T& data)

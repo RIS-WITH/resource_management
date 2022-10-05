@@ -45,7 +45,7 @@ public:
       }
     );
   }
-  T getPriority() { return priority_; }
+  T getPriority() const { return priority_; }
 
 protected:
   T priority_;

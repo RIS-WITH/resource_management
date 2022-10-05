@@ -25,8 +25,8 @@ void StateMachinesManager::insert(int id, resource_synchronizer_msgs::MetaStateM
 
 void StateMachinesManager::cancel(int meta_sm_id)
 {
-  for(size_t i = 0; i < state_machines_holders_.size(); i++)
-    state_machines_holders_[i]->cancel(meta_sm_id);
+  for(auto& holder : state_machines_holders_)
+    holder->cancel(meta_sm_id);
 
   removeSm(meta_sm_id);
 }

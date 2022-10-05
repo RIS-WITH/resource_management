@@ -17,11 +17,10 @@ void StateMachineSynchroHolder::insert(const std::string& resource, const std::v
   }
 }
 
-void StateMachineSynchroHolder::registerResource(const std::string &resource) {
+void StateMachineSynchroHolder::registerResource(const std::string &resource)
+{
   if(publishers_.find(resource) == publishers_.end())
-  {
     publishers_[resource] = nh_->advertise<std_msgs::String>("/" + resource + "/str_events", 100);
-  }
 }
 
 bool StateMachineSynchroHolder::activate(const std::string& synchro, const std::string& resource)
@@ -43,12 +42,11 @@ bool StateMachineSynchroHolder::activate(const std::string& synchro, const std::
 
     if(res)
     {
-      for(size_t i = 0; i < it->second.size(); i++)
-      {
-        std_msgs::String msg;
-        msg.data = "__synchro__" + it->first;
-        publishers_[it->second[i]].publish(msg);
-      }
+      std_msgs::String msg;
+      msg.data = "__synchro__" + it->first;
+      for(auto& r : it->second)
+        publishers_[r].publish(msg);
+      
       reset(synchro);
     }
   }
@@ -59,14 +57,12 @@ bool StateMachineSynchroHolder::activate(const std::string& synchro, const std::
 void StateMachineSynchroHolder::reset()
 {
   for(auto it : activations_)
-    for(size_t i = 0; i < it.second.size(); i++)
-      it.second[i] = false;
+    std::fill(it.second.begin(), it.second.end(), false);
 }
 
-void StateMachineSynchroHolder::reset(const std::string& synchro) {
-  for (size_t i=0; i < activations_[synchro].size(); i++){
-    activations_[synchro][i] = false;
-  }
+void StateMachineSynchroHolder::reset(const std::string& synchro)
+{
+  std::fill(activations_[synchro].begin(), activations_[synchro].end(), false);
 }
 
 } // namespace resource_synchronizer

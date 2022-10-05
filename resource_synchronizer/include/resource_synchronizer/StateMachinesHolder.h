@@ -51,7 +51,7 @@ class StateMachinesHolder : public StateMachinesHolderBase
   typedef StateMachine<typename SMT::_state_machine_type> state_machine_type_;
 
 public:
-  StateMachinesHolder(std::string name) : server_(name, true)
+  explicit StateMachinesHolder(const std::string& name) : server_(name, true)
   {
     server_.waitForServer();
     server_.registerSatusCallback([this](auto status){ this->stateMachineStatus(status); });
@@ -71,7 +71,7 @@ public:
       return false;
   }
 
-  bool send(int id)
+  bool send(int id) override
   {
     if(running_id_ != -1)
       return false;
@@ -90,7 +90,7 @@ public:
       return false;
   }
 
-  bool cancel()
+  bool cancel() override
   {
     bool res = true;
     mutex_.lock();
@@ -106,7 +106,7 @@ public:
     return res;
   }
 
-  bool cancel(int id)
+  bool cancel(int id) override
   {
     mutex_.lock();
     if(running_id_ == id)
@@ -121,22 +121,22 @@ public:
     return true;
   }
 
-  size_t size()
+  size_t size() override
   {
     return state_machines_.size();
   }
 
-  int isRunning()
+  int isRunning() override
   {
     return running_id_;
   }
 
-  bool isOneRunning(int id)
+  bool isOneRunning(int id) override
   {
     return running_id_ == id;
   }
 
-  std::vector<int> getIdsPerPriorities()
+  std::vector<int> getIdsPerPriorities() override
   {
     std::vector<StateMachinePriority> priorities;
 
@@ -162,13 +162,13 @@ public:
     mutex_.unlock();
 
     std::vector<int> res;
-    for(const auto& x : priorities)
-      res.push_back(x.state_machine_id);
+    std::transform(priorities.cbegin(), priorities.cend(), std::back_inserter(res),
+                   [](const StateMachinePriority& p) { return p.state_machine_id; });
 
     return res;
   }
 
-  bool canReplace(int id)
+  bool canReplace(int id) override
   {
     if(running_id_ == -1)
       return true;

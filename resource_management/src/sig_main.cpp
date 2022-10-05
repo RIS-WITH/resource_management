@@ -12,7 +12,7 @@ struct test_t
   std::string msg;
 };
 
-void publishStrMsg(std::string msg, bool is_new)
+void publishStrMsg(const std::string& msg, bool is_new)
 {
   std::cout << "[StrMsg] " << msg << " " << is_new << std::endl;
 }

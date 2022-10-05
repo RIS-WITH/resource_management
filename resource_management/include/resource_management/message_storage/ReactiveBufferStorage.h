@@ -12,7 +12,7 @@ namespace resource_management {
 class ReactiveBufferStorage
 {
 public:
-  ReactiveBufferStorage(const std::vector<std::string>& names);
+  explicit ReactiveBufferStorage(const std::vector<std::string>& names);
   ~ReactiveBufferStorage() = default;
 
   void setPriority(const std::string& name, focus_priority_t priority);

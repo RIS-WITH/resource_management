@@ -27,8 +27,7 @@ void StateMachinesSynchronizer::reset(int id)
 
 void StateMachinesSynchronizer::erase(int id)
 {
-  if(synchro_holders_.find(id) != synchro_holders_.end())
-    synchro_holders_.erase(id);
+  synchro_holders_.erase(id);
 }
 
 } // namespace resource_synchronizer

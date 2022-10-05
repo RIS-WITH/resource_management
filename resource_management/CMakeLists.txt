@@ -1,5 +1,6 @@
 cmake_minimum_required (VERSION 2.8)
-project (resource_management)
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+project(resource_management)
 
 add_compile_options(-std=c++14 -Wall -Wextra -pthread)
 

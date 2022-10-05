@@ -10,11 +10,10 @@ namespace resource_management {
 class ArtificialLife
 {
 public:
-  ArtificialLife(float frame_rate, std::shared_ptr<ReactiveBuffer> buffer) : _rate(frame_rate)
-  {
-    _buffer = buffer;
-    _is_running = false;
-  }
+  ArtificialLife(float frame_rate, std::shared_ptr<ReactiveBuffer> buffer) : _buffer(buffer),
+                                                                             _rate(frame_rate),
+                                                                             _is_running(false)
+  {}
 
   void start()
   {

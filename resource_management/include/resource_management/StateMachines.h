@@ -49,10 +49,10 @@ StateMachines<T,E>::StateMachines(ros::NodeHandlePtr nh, StateFromMsgFn stateFro
     _nh(std::move(nh)),
     _getStateDataFromStateMachineMsg(std::move(stateFromMsg)),
     _getTransitionsFromStateMachineMsg(std::move(transitionFromMsg)),
-    _generateResponseMsg(std::move(generateResponseMsg))
+    _generateResponseMsg(std::move(generateResponseMsg)),
+    _storage(storage),
+    _stateMachinesId(0)
 {
-    _storage = storage;
-    _stateMachinesId = 0;
     _serviceServer = _nh->advertiseService(synchronized ? "state_machines_register__" : "state_machines_register", &StateMachines<T,E>::_serviceCallback,this);
     _extractServer = _nh->advertiseService("extract_synchro__", &StateMachines<T,E>::_extractCallback,this);
 }
