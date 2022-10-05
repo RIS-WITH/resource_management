@@ -20,16 +20,15 @@ ${class_name}::transitionFromMsg(const ${project_name}_msgs::StateMachine &msg)
     std::vector<std::tuple<std::string,std::string,resource_management_msgs::EndCondition>> transitions;
 !!for data_type in message_types
 
-    for(auto x : msg.states_{data_type[0]}){{
-        for(auto t : x.header.transitions){{
-            transitions.push_back(
-                        std::make_tuple<std::string,std::string,resource_management_msgs::EndCondition>(
-                            std::string(x.header.id),
-                            std::string(t.next_state),
-                            resource_management_msgs::EndCondition(t.end_condition)));
-        }}
-    }}
+    for(auto x : msg.states_{data_type[0]})
+        std::transform(x.header.transitions.begin(), x.header.transitions.end(),
+                      std::back_inserter(transitions),
+                      [x](auto& t){{return std::make_tuple<std::string,std::string,resource_management_msgs::EndCondition>(
+                                                          std::string(x.header.id),
+                                                          std::string(t.next_state),
+                                                          resource_management_msgs::EndCondition(t.end_condition));}});
 !!end
+
     return transitions;
 }
 
