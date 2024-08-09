@@ -52,3 +52,22 @@ target_link_libraries(state_machine ${CMAKE_THREAD_LIBS_INIT})
 add_executable(signals src/sig_main.cpp)
 target_link_libraries(signals message_lib)
 target_link_libraries(signals ${CMAKE_THREAD_LIBS_INIT})
+
+install(TARGETS
+  message_lib
+  state_machine_lib
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".svn" EXCLUDE
+)
+
+install(DIRECTORY manager_generator/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/manager_generator
+)
