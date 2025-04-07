@@ -9,10 +9,18 @@
 #include <std_msgs/String.h>
 
 // User-defined message interfaces
-// #include <resource_management/MyMessage.h>
+#include <resource_management_msgs/CompatDuration.h>
+#include <resource_management_msgs/CompatTime.h>
+#include <resource_management_msgs/EndCondition.h>
+#include <resource_management_msgs/MessagePriority.h>
+#include <resource_management_msgs/PrioritiesSetter.h>
+#include <resource_management_msgs/StateMachineHeader.h>
+#include <resource_management_msgs/StateMachineStateHeader.h>
+#include <resource_management_msgs/StateMachineTransition.h>
+#include <resource_management_msgs/StateMachinesStatus.h>
 
 // User-defined service interfaces
-// #include <resource_management/MyService.h>
+#include <resource_management_msgs/StateMachinesCancel.h>
 
 namespace std_msgs_compat = std_msgs;
 
@@ -23,10 +31,18 @@ namespace std_msgs_compat = std_msgs;
 #include <std_msgs/msg/string.hpp>
 
 // User-defined message interfaces
-// #include <resource_management_msgs/msg/CompatDuration.hpp>
+#include <resource_management_msgs/msg/compat_duration.hpp>
+#include <resource_management_msgs/msg/compat_time.hpp>
+#include <resource_management_msgs/msg/end_condition.hpp>
+#include <resource_management_msgs/msg/message_priority.hpp>
+#include <resource_management_msgs/msg/priorities_setter.hpp>
+#include <resource_management_msgs/msg/state_machine_header.hpp>
+#include <resource_management_msgs/msg/state_machine_state_header.hpp>
+#include <resource_management_msgs/msg/state_machine_transition.hpp>
+#include <resource_management_msgs/msg/state_machines_status.hpp>
 
 // User-defined service interfaces
-// #include <resource_management/MyService.hpp>
+#include <resource_management_msgs/srv/state_machines_cancel.hpp>
 
 namespace std_msgs_compat = std_msgs::msg;
 

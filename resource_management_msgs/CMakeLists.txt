@@ -12,6 +12,7 @@ elseif($ENV{ROS_VERSION} STREQUAL "2")
   find_package(rosidl_default_generators REQUIRED)
   find_package(ament_cmake_python REQUIRED)
   find_package(std_msgs REQUIRED)
+  find_package(builtin_interfaces REQUIRED)
 endif()
 
 # ###############################################
@@ -42,7 +43,7 @@ if($ENV{ROS_VERSION} STREQUAL "1")
   generate_messages(DEPENDENCIES std_msgs)
 
 elseif($ENV{ROS_VERSION} STREQUAL "2")
-  rosidl_generate_interfaces(project_name
+  rosidl_generate_interfaces(resource_management_msgs
     "msg/CompatDuration.msg"
     "msg/CompatTime.msg"
     "msg/EndCondition.msg"
