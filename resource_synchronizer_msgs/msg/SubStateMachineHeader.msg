@@ -1,3 +1,3 @@
 string initial_state
-duration timeout
-time begin_dead_line
+resource_management_msgs/CompatDuration timeout
+resource_management_msgs/CompatTime begin_dead_line
