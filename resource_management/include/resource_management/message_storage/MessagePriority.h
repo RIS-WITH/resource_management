@@ -5,19 +5,19 @@
 
 namespace resource_management {
 
-class MessagePriority : public PriorityHolder<importance_priority_t>
-{
-public:
-  MessagePriority() {};
-
-  int operator*(focus_priority_t other)
+  class MessagePriority : public PriorityHolder<ImportancePriority_e>
   {
-    return (int)priorities_[(int)priority_][(int)other];
-  }
-private:
-};
+  public:
+    MessagePriority() {};
 
-} //namespace resource_management
+    int operator*(FocusPriority_e other)
+    {
+      return (int)priorities_[(int)priority_][(int)other];
+    }
 
+  private:
+  };
+
+} // namespace resource_management
 
 #endif // MESSAGEPRIORITY_H

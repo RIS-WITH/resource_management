@@ -1,87 +1,87 @@
 #include "resource_management/state_machine/StateMachineState.h"
 
+#include <cstddef>
+#include <string>
+
+#include "resource_management/state_machine/StateMachineTransition.h"
+
 namespace resource_management {
 
-StateMachineState::StateMachineState(const std::string& id, bool partially_defined)
-{
-  id_ = id;
-  partially_defined_ = partially_defined;
-}
+  StateMachineState::StateMachineState(const std::string& id, bool partially_defined) : id_(id),
+                                                                                        partially_defined_(partially_defined)
+  {}
 
-void StateMachineState::setTransition(StateMachineState* next, StateMachineTransition tansition)
-{
-  transitions_conditions_.push_back(tansition);
-  transitions_next_state_.push_back(next);
-  std::vector<std::string> tmp = tansition.getSynchroNames();
-  if(tmp.size())
-    synchro_names_.insert(synchro_names_.end(), tmp.begin(), tmp.end());
-}
-
-void StateMachineState::startState()
-{
-  for(auto& transition : transitions_conditions_)
-    transition.start();
-}
-
-transtition_state_t StateMachineState::update(StateMachineState** current_state, const std::string& event)
-{
-  transtition_state_t transtition_state = transition_none;
-  size_t next_index = -1;
-
-  if(endState())
+  void StateMachineState::setTransition(StateMachineState* next, const StateMachineTransition& tansition)
   {
-    *current_state =  nullptr;
-    return transtition_state;
+    transitions_conditions_.push_back(tansition);
+    transitions_next_state_.push_back(next);
+    std::vector<std::string> tmp = tansition.getSynchroNames();
+    if(tmp.size())
+      synchro_names_.insert(synchro_names_.end(), tmp.begin(), tmp.end());
   }
 
-  for(size_t i = 0; i < transitions_conditions_.size(); i++)
+  void StateMachineState::startState()
   {
-    if(event == "")
-      transtition_state = transitions_conditions_[i].evaluate();
-    else
-      transtition_state = transitions_conditions_[i].evaluate(event);
+    for(auto& transition : transitions_conditions_)
+      transition.start();
+  }
+
+  TranstitionState_e StateMachineState::update(StateMachineState** current_state, const std::string& event)
+  {
+    TranstitionState_e transtition_state = transition_none;
+    size_t next_index = -1;
+
+    if(endState())
+    {
+      *current_state = nullptr;
+      return transtition_state;
+    }
+
+    for(size_t i = 0; i < transitions_conditions_.size(); i++)
+    {
+      if(event == "")
+        transtition_state = transitions_conditions_[i].evaluate();
+      else
+        transtition_state = transitions_conditions_[i].evaluate(event);
+
+      if((transtition_state == transition_pass_on_event) || (transtition_state == transition_pass_on_duration))
+      {
+        next_index = i;
+        break;
+      }
+      else if(transtition_state == transition_timeout)
+        break;
+    }
 
     if((transtition_state == transition_pass_on_event) || (transtition_state == transition_pass_on_duration))
     {
-      next_index = i;
-      break;
+      *current_state = transitions_next_state_[next_index];
+      if((*current_state)->endState())
+        *current_state = nullptr;
     }
     else if(transtition_state == transition_timeout)
-      break;
+      *current_state = nullptr;
+    else if((transtition_state == transition_wait) || (transtition_state == transition_wait_synchro))
+      *current_state = this;
+
+    return transtition_state;
   }
 
-  if((transtition_state == transition_pass_on_event) || (transtition_state == transition_pass_on_duration))
+  bool StateMachineState::endState() const
   {
-    *current_state = transitions_next_state_[next_index];
-    if((*current_state)->endState())
-      *current_state =  nullptr;
+    return transitions_conditions_.empty();
   }
-  else if(transtition_state == transition_timeout)
-    *current_state =  nullptr;
-  else if((transtition_state == transition_wait) || (transtition_state == transition_wait_synchro))
-    *current_state = this;
 
-  return transtition_state;
-}
+  void StateMachineState::analyse()
+  {
+    if(transitions_conditions_.empty())
+      std::cout << "\t" << compat::rm_ros::Node::get().getName() << "[WARNING] " << id_ << " has no transition" << std::endl;
 
-bool StateMachineState::endState() const
-{
-  if(transitions_conditions_.size() == 0)
-    return true;
-  else
-    return false;
-}
+    if(transitions_next_state_.empty())
+      std::cout << "\t" << compat::rm_ros::Node::get().getName() << "[WARNING] " << id_ << " has no next state" << std::endl;
 
-void StateMachineState::analyse()
-{
-  if(transitions_conditions_.size() == 0)
-    std::cout << "\t" << ros::this_node::getName() << "[WARNING] " << id_ << " has no transition" << std::endl;
-
-  if(transitions_next_state_.size() == 0)
-    std::cout << "\t" << ros::this_node::getName() << "[WARNING] " << id_ << " has no next state" << std::endl;
-
-  for(auto& condition : transitions_conditions_)
-    condition.analyse(id_);
-}
+    for(auto& condition : transitions_conditions_)
+      condition.analyse(id_);
+  }
 
 } // namespace resource_management

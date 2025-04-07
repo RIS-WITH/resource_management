@@ -1,32 +1,28 @@
 #ifndef EVENTSINTERFACE_H
 #define EVENTSINTERFACE_H
 
+#include <functional>
 #include <string>
 
-#include <ros/ros.h>
+#include "resource_management/compat/ros.h"
 
-namespace resource_management
-{
+namespace resource_management {
 
-class EventsInterface
-{
-public:
-  virtual ~EventsInterface() {}
-  
-  virtual void setNodeHandle(ros::NodeHandlePtr nh)
+  class EventsInterface
   {
-    _nh = nh;
-  }
+  public:
+    virtual ~EventsInterface() = default;
 
-  void registerSpreading(std::function<void(const std::string&)> SpreadEvent)
-  {
-    _SpreadEvent = SpreadEvent;
-  }
+    virtual void init() {}
 
-protected:
-  std::function<void(const std::string&)> _SpreadEvent;
-  ros::NodeHandlePtr _nh;
-};
+    void registerSpreading(std::function<void(const std::string&)> SpreadEvent)
+    {
+      spreadEvent_ = SpreadEvent;
+    }
+
+  protected:
+    std::function<void(const std::string&)> spreadEvent_;
+  };
 
 } //  namespace resource_management
 

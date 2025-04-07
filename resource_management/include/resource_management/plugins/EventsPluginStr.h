@@ -3,24 +3,23 @@
 
 #include <string>
 
-#include "std_msgs/String.h"
-
+#include "resource_management/compat/ros.h"
 #include "resource_management/plugins/EventsInterface.h"
 
-namespace resource_management
-{
+namespace resource_management {
 
-class EventsPluginStr : public EventsInterface
-{
-public:
-  EventsPluginStr() {}
-  void setNodeHandle(ros::NodeHandlePtr nh);
+  class EventsPluginStr : public EventsInterface
+  {
+  public:
+    EventsPluginStr() {};
+    ~EventsPluginStr() override = default;
+    void init() override;
 
-private:
-  ros::Subscriber _subscriber;
+  private:
+    compat::rm_ros::Subscriber<std_msgs_compat::String> subscriber_;
 
-  void callback(const std_msgs::String::ConstPtr& msg);
-};
+    void callback(const std_msgs_compat::String& msg);
+  };
 
 } //  namespace resource_management
 

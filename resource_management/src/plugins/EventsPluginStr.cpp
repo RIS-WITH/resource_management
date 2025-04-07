@@ -1,22 +1,23 @@
 #include "resource_management/plugins/EventsPluginStr.h"
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 
-namespace resource_management
-{
+namespace resource_management {
 
-void EventsPluginStr::setNodeHandle(ros::NodeHandlePtr nh)
-{
-  _nh = nh;
-  if(_nh)
-    _subscriber = _nh->subscribe("str_events", 100, &EventsPluginStr::callback, this);
-}
+  void EventsPluginStr::init()
+  {
+    subscriber_ = compat::rm_ros::Subscriber<std_msgs_compat::String>(
+      "str_events",
+      100,
+      &EventsPluginStr::callback,
+      this);
+  }
 
-void EventsPluginStr::callback(const std_msgs::String::ConstPtr& msg)
-{
-  if(_SpreadEvent)
-    _SpreadEvent(msg->data);
-}
+  void EventsPluginStr::callback(const std_msgs_compat::String& msg)
+  {
+    if(spreadEvent_)
+      spreadEvent_(msg.data);
+  }
 
 } //  namespace resource_management
 

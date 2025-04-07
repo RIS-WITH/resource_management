@@ -5,19 +5,19 @@
 
 namespace resource_management {
 
-class BufferPriority : public PriorityHolder<focus_priority_t>
-{
-public:
-  BufferPriority() {};
-
-  int operator*(const importance_priority_t other) const
+  class BufferPriority : public PriorityHolder<FocusPriority_e>
   {
-    return (int)priorities_[(int)other][(int)priority_];
-  }
-private:
-};
+  public:
+    BufferPriority() {};
 
-} //namespace resource_management
+    int operator*(const ImportancePriority_e other) const
+    {
+      return (int)priorities_[(int)other][(int)priority_];
+    }
 
+  private:
+  };
+
+} // namespace resource_management
 
 #endif // BUFFERPRIORITY_H
