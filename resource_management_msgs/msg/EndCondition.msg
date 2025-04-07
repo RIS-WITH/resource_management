@@ -1,3 +1,3 @@
-duration timeout
-duration duration
+CompatDuration timeout
+CompatDuration duration
 string[] regex_end_condition

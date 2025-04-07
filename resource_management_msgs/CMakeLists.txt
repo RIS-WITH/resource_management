@@ -1,28 +1,73 @@
-cmake_minimum_required (VERSION 2.8)
-project (resource_management_msgs)
+cmake_minimum_required(VERSION 3.8)
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+project(resource_management_msgs)
 
-find_package(catkin REQUIRED COMPONENTS
-    roscpp
-    message_generation
+if($ENV{ROS_VERSION} STREQUAL "1")
+  find_package(catkin REQUIRED COMPONENTS
     std_msgs
-    )
+    message_generation
+  )
+elseif($ENV{ROS_VERSION} STREQUAL "2")
+  find_package(ament_cmake REQUIRED)
+  find_package(rosidl_default_generators REQUIRED)
+  find_package(ament_cmake_python REQUIRED)
+  find_package(std_msgs REQUIRED)
+endif()
 
-add_message_files(
+# ###############################################
+# # Declare ROS messages, services and actions ##
+# ###############################################
+if($ENV{ROS_VERSION} STREQUAL "1")
+  # Generate messages in the 'msg' folder
+  add_message_files(
     FILES
-    StateMachineHeader.msg
-    StateMachineTransition.msg
+    CompatDuration.msg
+    CompatTime.msg
     EndCondition.msg
     MessagePriority.msg
-    StateMachineStateHeader.msg
-    StateMachinesStatus.msg
     PrioritiesSetter.msg
-)
+    StateMachineHeader.msg
+    StateMachinesStatus.msg
+    StateMachineStateHeader.msg
+    StateMachineTransition.msg
+  )
 
-add_service_files(
+  # Generate services in the 'srv' folder
+  add_service_files(
     FILES
     StateMachinesCancel.srv
-)
+  )
 
-generate_messages(DEPENDENCIES std_msgs)
+  # Generate added messages and services with any dependencies listed here
+  generate_messages(DEPENDENCIES std_msgs)
 
-catkin_package( CATKIN_DEPENDS message_runtime std_msgs)
+elseif($ENV{ROS_VERSION} STREQUAL "2")
+  rosidl_generate_interfaces(project_name
+    "msg/CompatDuration.msg"
+    "msg/CompatTime.msg"
+    "msg/EndCondition.msg"
+    "msg/MessagePriority.msg"
+    "msg/PrioritiesSetter.msg"
+    "msg/StateMachineHeader.msg"
+    "msg/StateMachinesStatus.msg"
+    "msg/StateMachineStateHeader.msg"
+    "msg/StateMachineTransition.msg"
+    "srv/StateMachinesCancel.srv"
+    DEPENDENCIES builtin_interfaces std_msgs)
+endif()
+
+# ##################################
+# #   ROS specific configuration  ##
+# ##################################
+if($ENV{ROS_VERSION} STREQUAL "1")
+  catkin_package(CATKIN_DEPENDS message_runtime std_msgs)
+elseif($ENV{ROS_VERSION} STREQUAL "2")
+  ament_export_dependencies(rosidl_default_runtime)
+endif()
+
+# ##################################
+# #            ROS2               ##
+# ##################################
+if($ENV{ROS_VERSION} STREQUAL "2")
+  ament_package()
+endif()

@@ -1,4 +1,4 @@
 string initial_state
-duration timeout
-time begin_dead_line
+CompatDuration timeout
+CompatTime begin_dead_line
 MessagePriority priority
