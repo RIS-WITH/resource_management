@@ -1,239 +1,246 @@
 #ifndef RESOURCE_SYNCHRONIZER_STATEMACHINESHOLDER_H
 #define RESOURCE_SYNCHRONIZER_STATEMACHINESHOLDER_H
 
-#include <string>
+#include <functional>
 #include <map>
 #include <mutex>
-#include <functional>
+#include <string>
 
-#include <ros/ros.h>
-
-#include "resource_synchronizer/StateMachine.h"
 #include "resource_management/API/StateMachineClient.h"
+#include "resource_synchronizer/StateMachine.h"
+#include "resource_synchronizer/compat/ros.h"
 
-namespace resource_synchronizer
-{
+namespace resource_synchronizer {
 
-struct StateMachinePriority
-{
-  int priority;
-  int state_machine_id;
-};
-
-
-struct SubStateMachineStatus
-{
-  std::string resource;
-  std::string state_name;
-  std::string event_name;
-  int id;
-};
-
-class StateMachinesHolderBase
-{
-public:
-  virtual bool send(int id) = 0;
-  virtual bool cancel() = 0;
-  virtual bool cancel(int id) = 0;
-
-  virtual size_t size() = 0;
-
-  virtual int isRunning() = 0;
-  virtual bool isOneRunning(int id) = 0;
-  virtual bool canReplace(int id) = 0;
-
-  virtual std::vector<int> getIdsPerPriorities() = 0;
-};
-
-template<typename SMT, typename RMT, typename SMET>
-class StateMachinesHolder : public StateMachinesHolderBase
-{
-  typedef StateMachine<typename SMT::_state_machine_type> state_machine_type_;
-
-public:
-  explicit StateMachinesHolder(const std::string& name) : server_(name, true)
+  struct StateMachinePriority
   {
-    server_.waitForServer();
-    server_.registerSatusCallback([this](auto status){ this->stateMachineStatus(status); });
-    running_id_ = -1;
-    name_ = name;
-  }
+    int priority;
+    int state_machine_id;
+  };
 
-  bool insert(int id, SMT sub_state_machine, resource_management_msgs::MessagePriority importance)
+  struct SubStateMachineStatus
   {
-    if(sub_state_machine.header.initial_state != "")
+    std::string resource;
+    std::string state_name;
+    std::string event_name;
+    int id;
+  };
+
+  class StateMachinesHolderBase
+  {
+  public:
+    virtual bool send(int id) = 0;
+    virtual bool cancel() = 0;
+    virtual bool cancel(int id) = 0;
+
+    virtual size_t size() = 0;
+
+    virtual int isRunning() = 0;
+    virtual bool isOneRunning(int id) = 0;
+    virtual bool canReplace(int id) = 0;
+
+    virtual std::vector<int> getIdsPerPriorities() = 0;
+  };
+
+  template<typename SMT, typename RMT, typename SMET>
+  class StateMachinesHolder : public StateMachinesHolderBase
+  {
+    typedef StateMachine<typename SMT::_state_machine_type> state_machine_type_;
+
+  public:
+    explicit StateMachinesHolder(const std::string& name) : server_(name, true)
     {
-      state_machines_.insert( std::pair<int, state_machine_type_>
-        (id, state_machine_type_(sub_state_machine.state_machine, sub_state_machine.header, importance) ) );
-      return true;
+      server_.waitForServer();
+      server_.registerSatusCallback([this](auto status) { this->stateMachineStatus(status); });
+      running_id_ = -1;
+      name_ = name;
+      synchro_client_ = compat::rs_ros::Client<SMET>(name_ + "/extract_synchro__");
     }
-    else
-      return false;
-  }
 
-  bool send(int id) override
-  {
-    if(running_id_ != -1)
-      return false;
-
-    auto it = state_machines_.find(id);
-    if(it != state_machines_.end())
+    bool insert(int id, SMT sub_state_machine, compat::MessagePriority importance)
     {
-      RMT registerMsg;
-      registerMsg.request.state_machine = it->second.getStateMachineMsg();
-      registerMsg.request.header = it->second.getHeaderMsg();
-      server_.send(registerMsg);
-      running_id_ = id;
-      return true;
-    }
-    else
-      return false;
-  }
-
-  bool cancel() override
-  {
-    bool res = true;
-    mutex_.lock();
-    if(running_id_ != -1)
-    {
-      server_.cancel();
-      server_.waitForResult();
-      state_machines_.erase(running_id_);
-    }
-    else
-      res = false;
-    mutex_.unlock();
-    return res;
-  }
-
-  bool cancel(int id) override
-  {
-    mutex_.lock();
-    if(running_id_ == id)
-    {
-      server_.cancel();
-      server_.waitForResult();
-      state_machines_.erase(id);
-    }
-    else
-      state_machines_.erase(id);
-    mutex_.unlock();
-    return true;
-  }
-
-  size_t size() override
-  {
-    return state_machines_.size();
-  }
-
-  int isRunning() override
-  {
-    return running_id_;
-  }
-
-  bool isOneRunning(int id) override
-  {
-    return running_id_ == id;
-  }
-
-  std::vector<int> getIdsPerPriorities() override
-  {
-    std::vector<StateMachinePriority> priorities;
-
-    mutex_.lock();
-
-    for(auto it : state_machines_)
-    {
-      StateMachinePriority priority;
-      priority.priority = it.second.getPriority();
-      priority.state_machine_id = it.first;
-
-      size_t index = 0;
-      for(size_t i = 0; i < priorities.size(); i++)
+      if(sub_state_machine.header.initial_state != "")
       {
-        if(priority.priority > priorities[i].priority)
-        {
-          index = i;
-          break;
-        }
-      }
-      priorities.insert(priorities.begin() + index, priority);
-    }
-    mutex_.unlock();
-
-    std::vector<int> res;
-    std::transform(priorities.cbegin(), priorities.cend(), std::back_inserter(res),
-                   [](const StateMachinePriority& p) { return p.state_machine_id; });
-
-    return res;
-  }
-
-  bool canReplace(int id) override
-  {
-    if(running_id_ == -1)
-      return true;
-    else
-    {
-      auto it_id = state_machines_.find(id);
-      auto it_running_id = state_machines_.find(running_id_);
-      if((int)it_id->second.getHeaderMsg().priority.value > (int)it_running_id->second.getHeaderMsg().priority.value)
+        state_machines_.insert(std::pair<int, state_machine_type_>(id, state_machine_type_(sub_state_machine.state_machine, sub_state_machine.header, importance)));
         return true;
+      }
       else
         return false;
     }
-  }
 
-  void registerSatusCallback(std::function<void(SubStateMachineStatus)> status_callback) { status_callback_ = status_callback; }
-
-  std::vector<std::string> getSynchros(int id)
-  {
-    std::vector<std::string> res;
-
-    auto it = state_machines_.find(id);
-    if(it != state_machines_.end())
+    bool send(int id) override
     {
-      SMET srv;
-      srv.request.state_machine = it->second.getStateMachineMsg();
-      ros::NodeHandle nh;
-      ros::ServiceClient client = nh.serviceClient<SMET>(name_ + "/extract_synchro__");
-      if (client.call(srv))
-        res = srv.response.synchros;
+      if(running_id_ != -1)
+        return false;
+
+      auto it = state_machines_.find(id);
+      if(it != state_machines_.end())
+      {
+        RMT registerMsg;
+        registerMsg.request.state_machine = it->second.getStateMachineMsg();
+        registerMsg.request.header = it->second.getHeaderMsg();
+        server_.send(registerMsg);
+        running_id_ = id;
+        return true;
+      }
+      else
+        return false;
     }
 
-    return res;
-  }
-
-private:
-  std::map<int, state_machine_type_> state_machines_;
-  int running_id_;
-  std::mutex mutex_;
-  std::string name_;
-
-  resource_management::StateMachineClient<RMT> server_;
-  std::function<void(SubStateMachineStatus)> status_callback_;
-
-  void stateMachineStatus(resource_management::stateMachineState_t status)
-  {
-    if(running_id_ != -1)
+    bool cancel() override
     {
-      SubStateMachineStatus sub_status;
-      sub_status.id = running_id_;
-      sub_status.resource = name_;
-      sub_status.state_name = status.state_name_;
-      sub_status.event_name = status.state_event_;
-      if(status_callback_)
-        status_callback_(sub_status);
-
-      if(status.state_name_ == "")
+      bool res = true;
+      mutex_.lock();
+      if(running_id_ != -1)
       {
-        mutex_.lock();
+        server_.cancel();
+        server_.waitForResult();
         state_machines_.erase(running_id_);
-        running_id_ = -1;
-        mutex_.unlock();
+      }
+      else
+        res = false;
+      mutex_.unlock();
+      return res;
+    }
+
+    bool cancel(int id) override
+    {
+      mutex_.lock();
+      if(running_id_ == id)
+      {
+        server_.cancel();
+        server_.waitForResult();
+        state_machines_.erase(id);
+      }
+      else
+        state_machines_.erase(id);
+      mutex_.unlock();
+      return true;
+    }
+
+    size_t size() override
+    {
+      return state_machines_.size();
+    }
+
+    int isRunning() override
+    {
+      return running_id_;
+    }
+
+    bool isOneRunning(int id) override
+    {
+      return running_id_ == id;
+    }
+
+    std::vector<int> getIdsPerPriorities() override
+    {
+      std::vector<StateMachinePriority> priorities;
+
+      mutex_.lock();
+
+      for(auto it : state_machines_)
+      {
+        StateMachinePriority priority;
+        priority.priority = it.second.getPriority();
+        priority.state_machine_id = it.first;
+
+        size_t index = 0;
+        for(size_t i = 0; i < priorities.size(); i++)
+        {
+          if(priority.priority > priorities[i].priority)
+          {
+            index = i;
+            break;
+          }
+        }
+        priorities.insert(priorities.begin() + index, priority);
+      }
+      mutex_.unlock();
+
+      std::vector<int> res;
+      std::transform(priorities.cbegin(), priorities.cend(), std::back_inserter(res),
+                     [](const StateMachinePriority& p) { return p.state_machine_id; });
+
+      return res;
+    }
+
+    bool canReplace(int id) override
+    {
+      if(running_id_ == -1)
+        return true;
+      else
+      {
+        auto it_id = state_machines_.find(id);
+        auto it_running_id = state_machines_.find(running_id_);
+        if((int)it_id->second.getHeaderMsg().priority.value > (int)it_running_id->second.getHeaderMsg().priority.value)
+          return true;
+        else
+          return false;
       }
     }
-  }
-};
+
+    void registerSatusCallback(std::function<void(SubStateMachineStatus)> status_callback) { status_callback_ = status_callback; }
+
+    std::vector<std::string> getSynchros(int id)
+    {
+      std::vector<std::string> res;
+
+      auto it = state_machines_.find(id);
+      if(it != state_machines_.end())
+      {
+        auto req = compat::makeRequest<SMET>();
+        auto res = compat::makeResponse<SMET>();
+
+        [stm = it->second.getStateMachineMsg()](auto&& req) {
+          req->state_machine = stm;
+        }(compat::rs_ros::getServicePointer(req));
+
+        using ResultTy = typename decltype(synchro_client_)::Status_e;
+
+        if(synchro_client_.call(req, res) != ResultTy::ros_status_failure)
+        {
+          return [](auto&& res) {
+            return res->synchros;
+          }(compat::rs_ros::getServicePointer(res));
+        }
+      }
+
+      return res;
+    }
+
+  private:
+    std::map<int, state_machine_type_> state_machines_;
+    int running_id_;
+    std::mutex mutex_;
+    std::string name_;
+
+    resource_management::StateMachineClient<RMT> server_;
+    std::function<void(SubStateMachineStatus)> status_callback_;
+    compat::rs_ros::Client<SMET> synchro_client_;
+
+    void stateMachineStatus(const resource_management::stateMachineState_t& status)
+    {
+      if(running_id_ != -1)
+      {
+        SubStateMachineStatus sub_status;
+        sub_status.id = running_id_;
+        sub_status.resource = name_;
+        sub_status.state_name = status.state_name_;
+        sub_status.event_name = status.state_event_;
+        if(status_callback_)
+          status_callback_(sub_status);
+
+        if(status.state_name_.empty())
+        {
+          mutex_.lock();
+          state_machines_.erase(running_id_);
+          running_id_ = -1;
+          mutex_.unlock();
+        }
+      }
+    }
+  };
 
 } // namespace resource_synchronizer
 

@@ -174,6 +174,8 @@ elseif($ENV{ROS_VERSION} STREQUAL "2")
 
   install(DIRECTORY include/ DESTINATION include)
 
+  install(DIRECTORY manager_generator DESTINATION share/${PROJECT_NAME}/)
+
   ament_export_targets(resource_management)
 endif()
 
@@ -181,7 +183,8 @@ endif()
 # #            ROS2               ##
 # ##################################
 if($ENV{ROS_VERSION} STREQUAL "2")
-  # pluginlib_export_plugin_description_file(project_name reasoners_plugins_ros2.xml)
+  pluginlib_export_plugin_description_file(resource_management plugins_ros2.xml)
+
   ament_export_include_directories(include)
   ament_package()
 endif()

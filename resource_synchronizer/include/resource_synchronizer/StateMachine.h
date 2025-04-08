@@ -3,60 +3,55 @@
 
 #include <string>
 
-#include <ros/ros.h>
+#include "resource_synchronizer/compat/ros.h"
 
-#include "resource_synchronizer_msgs/SubStateMachineHeader.h"
-#include "resource_management_msgs/MessagePriority.h"
-#include "resource_management_msgs/StateMachineHeader.h"
+namespace resource_synchronizer {
 
-namespace resource_synchronizer
-{
-
-template<typename T>
-class StateMachine
-{
-public:
-  StateMachine(T state_machine_msg, resource_synchronizer_msgs::SubStateMachineHeader header, resource_management_msgs::MessagePriority importance)
+  template<typename T>
+  class StateMachine
   {
-    state_machine_ = state_machine_msg;
-    header_.initial_state = header.initial_state;
-    header_.timeout = header.timeout;
-    header_.begin_dead_line = header.begin_dead_line;
-    header_.priority = importance;
-  }
+  public:
+    StateMachine(T state_machine_msg, compat::SubStateMachineHeader header, compat::MessagePriority importance)
+    {
+      state_machine_ = state_machine_msg;
+      header_.initial_state = header.initial_state;
+      header_.timeout = header.timeout;
+      header_.begin_dead_line = header.begin_dead_line;
+      header_.priority = importance;
+    }
 
-  bool isTooLate()
-  {
-    if(ros::Time(0) > header_.begin_dead_line)
-      return true;
-    else
-      return false;
-  }
+    bool isTooLate()
+    {
+      if(compat::rs_ros::Time(0) > compat::rs_ros::Time(header_.begin_dead_line.sec, header_.begin_dead_line.nanosec))
+        return true;
+      else
+        return false;
+    }
 
-  resource_management_msgs::StateMachineHeader getHeaderMsg()
-  {
-    return header_;
-  }
+    compat::StateMachineHeader getHeaderMsg()
+    {
+      return header_;
+    }
 
-  T getStateMachineMsg()
-  {
-    return state_machine_;
-  }
+    T getStateMachineMsg()
+    {
+      return state_machine_;
+    }
 
-  T operator()()
-  {
-    return state_machine_;
-  }
+    T operator()()
+    {
+      return state_machine_;
+    }
 
-  int getPriority()
-  {
-    return header_.priority.value;
-  }
+    int getPriority()
+    {
+      return header_.priority.value;
+    }
 
-private:
-  T state_machine_;
-  resource_management_msgs::StateMachineHeader header_;
-};
+  private:
+    T state_machine_;
+    compat::StateMachineHeader header_;
+  };
 
 } // namespace resource_synchronizer
 

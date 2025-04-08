@@ -2,32 +2,29 @@
 #define RESOURCE_SYNCHRONIZER_STATEMACHINESYNCHROHOLDER
 
 #include <map>
-#include <vector>
 #include <string>
+#include <vector>
 
-#include <ros/ros.h>
+#include "resource_synchronizer/compat/ros.h"
 
-namespace resource_synchronizer
-{
+namespace resource_synchronizer {
 
-class StateMachineSynchroHolder
-{
-public:
-  void insert(const std::string& resource, const std::vector<std::string>& synchros);
+  class StateMachineSynchroHolder
+  {
+  public:
+    void insert(const std::string& resource, const std::vector<std::string>& synchros);
 
-  bool activate(const std::string& synchro, const std::string& resource);
-  void reset();
-  void reset(const std::string& synchro);
-  static void setNodeHandle(ros::NodeHandlePtr nh) { nh_ = nh; }
-  static void registerResource(const std::string& resource);
+    bool activate(const std::string& synchro, const std::string& resource);
+    void reset();
+    void reset(const std::string& synchro);
+    static void registerResource(const std::string& resource);
 
-private:
-  std::map<std::string, std::vector<std::string> > synchros_;
-  std::map<std::string, std::vector<bool> > activations_;
+  private:
+    std::map<std::string, std::vector<std::string>> synchros_;
+    std::map<std::string, std::vector<bool>> activations_;
 
-  static ros::NodeHandlePtr nh_;
-  static std::map<std::string, ros::Publisher> publishers_;
-};
+    static std::map<std::string, compat::rs_ros::Publisher<std_msgs_compat::String>> publishers_;
+  };
 
 } // namespace resource_synchronizer
 

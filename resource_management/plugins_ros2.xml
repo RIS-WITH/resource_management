@@ -1,0 +1,5 @@
+<library path="resource_management_plugin">
+  <class type="resource_management::EventsPluginStr" base_class_type="resource_management::EventsInterface">
+    <description>This is an event plugin with basic string.</description>
+  </class>
+</library>

@@ -3,4 +3,7 @@
 build/
 cmake-build-debug
 .idea
-.vscode/settings.json
+
+# VsCode files
+settings.json
+launch.json

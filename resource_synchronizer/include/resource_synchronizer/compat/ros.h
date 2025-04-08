@@ -1,5 +1,5 @@
-#ifndef RM_COMPAT_ROS_H
-#define RM_COMPAT_ROS_H
+#ifndef RS_COMPAT_ROS_H
+#define RS_COMPAT_ROS_H
 
 #if ROS_VERSION == 1
 #include <ros/callback_queue.h>
@@ -18,6 +18,9 @@
 #include <resource_management_msgs/StateMachineStateHeader.h>
 #include <resource_management_msgs/StateMachineTransition.h>
 #include <resource_management_msgs/StateMachinesStatus.h>
+#include <resource_synchronizer_msgs/MetaStatemachineHeader.hpp>
+#include <resource_synchronizer_msgs/MetaStatemachinesStatus.hpp>
+#include <resource_synchronizer_msgs/SubStateMachineHeader.hpp>
 
 // User-defined service interfaces
 #include <resource_management_msgs/StateMachinesCancel.h>
@@ -40,15 +43,18 @@ namespace std_msgs_compat = std_msgs;
 #include <resource_management_msgs/msg/state_machine_state_header.hpp>
 #include <resource_management_msgs/msg/state_machine_transition.hpp>
 #include <resource_management_msgs/msg/state_machines_status.hpp>
+#include <resource_synchronizer_msgs/msg/meta_state_machine_header.hpp>
+#include <resource_synchronizer_msgs/msg/meta_state_machines_status.hpp>
+#include <resource_synchronizer_msgs/msg/sub_state_machine_header.hpp>
 
 // User-defined service interfaces
 #include <resource_management_msgs/srv/state_machines_cancel.hpp>
 
 namespace std_msgs_compat = std_msgs::msg;
 
-namespace resource_management::msg {
+namespace resource_synchronizer::msg {
 }
-namespace resource_management::srv {
+namespace resource_synchronizer::srv {
 }
 
 #endif
@@ -59,11 +65,11 @@ namespace resource_management::srv {
 #include <mutex>
 #include <string>
 
-namespace resource_management::compat {
+namespace resource_synchronizer::compat {
 
 #if ROS_VERSION == 1
 
-  using namespace ::resource_management;
+  using namespace ::resource_synchronizer;
 
   template<typename T>
   using RawRequestType = typename T::Request;
@@ -86,6 +92,7 @@ namespace resource_management::compat {
   // todo: RequestType, ResponseType
 
 #elif ROS_VERSION == 2
+  using namespace ::resource_synchronizer_msgs::msg;
   using namespace ::resource_management_msgs::msg;
   using namespace ::resource_management_msgs::srv;
 
@@ -110,7 +117,7 @@ namespace resource_management::compat {
 // template <typename T, typename Result_ = typename T::>
 #endif
 
-  namespace rm_ros {
+  namespace rs_ros {
 
 #if ROS_VERSION == 1
     template<typename T>
@@ -137,8 +144,8 @@ namespace resource_management::compat {
     using RosTime = rclcpp::Time;
     using RosDuration = rclcpp::Duration;
 
-    using namespace ::resource_management::msg;
-    using namespace ::resource_management::srv;
+    using namespace ::resource_synchronizer::msg;
+    using namespace ::resource_synchronizer::srv;
 
     template<typename T>
     T& getServicePointer(T& service) { return service; }
@@ -166,9 +173,11 @@ namespace resource_management::compat {
 #if ROS_VERSION == 1
       Time(uint32_t sec, uint32_t nsec) : RosTime((int32_t)sec, (int32_t)nsec) {}
       explicit Time(int64_t t = 0) : RosTime(t) {}
+      Time(const compat::CompatTime& time) : RosTime((int32_t)time.sec, (int32_t)time.nanosec) {}
 #elif ROS_VERSION == 2
       Time(uint32_t sec, uint32_t nsec) : RosTime((int32_t)sec, (int32_t)nsec, Time::clock_type) {}
       explicit Time(int64_t t = 0) : RosTime(t, Time::clock_type) {}
+      Time(const compat::CompatTime& time) : RosTime((int32_t)time.sec, (int32_t)time.nanosec, Time::clock_type) {}
 #endif
       Time(const RosTime& time) : RosTime(time) {} // do not put it as explicit
 
@@ -195,6 +204,7 @@ namespace resource_management::compat {
     {
     public:
       Duration(uint32_t sec, uint32_t nsec) : RosDuration((int32_t)sec, (int32_t)nsec) {}
+      Duration(const compat::CompatDuration& duration) : RosDuration((int32_t)duration.sec, (int32_t)duration.nanosec) {}
 
 #if ROS_VERSION == 1
       explicit Duration(int64_t t) : RosDuration(t) {}
@@ -356,7 +366,7 @@ namespace resource_management::compat {
 #if ROS_VERSION == 1
         handle_ = node.handle_.advertiseService(service_name, callback);
 #elif ROS_VERSION == 2
-        handle_ = node.handle_->create_service<T>(service_name, [&](compat::rm_ros::ServiceWrapper<typename T::Request> req, compat::rm_ros::ServiceWrapper<typename T::Response> res) { callback(req, res); });
+        handle_ = node.handle_->create_service<T>(service_name, [&](compat::rs_ros::ServiceWrapper<typename T::Request> req, compat::rs_ros::ServiceWrapper<typename T::Response> res) { callback(req, res); });
         // handle_ = node.handle_->create_service<T>(service_name, callback);
 #endif
       }
@@ -369,7 +379,7 @@ namespace resource_management::compat {
 #if ROS_VERSION == 1
         handle_ = node.handle_.advertiseService(service_name, callback, ptr);
 #elif ROS_VERSION == 2
-        handle_ = node.handle_->create_service<T>(service_name, [ptr, callback](compat::rm_ros::ServiceWrapper<typename T::Request> req, compat::rm_ros::ServiceWrapper<typename T::Response> res) { (ptr->*callback)(req, res); });
+        handle_ = node.handle_->create_service<T>(service_name, [ptr, callback](compat::rs_ros::ServiceWrapper<typename T::Request> req, compat::rs_ros::ServiceWrapper<typename T::Response> res) { (ptr->*callback)(req, res); });
         // handle_ = node.handle_->create_service<T>(service_name, std::bind(std::forward<Ta>(callback), ptr, std::placeholders::_1, std::placeholders::_2));
 #endif
       }
@@ -393,6 +403,8 @@ namespace resource_management::compat {
         ros_status_failure
       };
 
+      Client() = default;
+
       explicit Client(const std::string& service_name) : name_(service_name)
       {
         auto& node = Node::get();
@@ -404,7 +416,7 @@ namespace resource_management::compat {
 #endif
       }
 
-      Status_e call(const resource_management::compat::RequestType<T>& req, resource_management::compat::ResponseType<T>& res)
+      Status_e call(const resource_synchronizer::compat::RequestType<T>& req, resource_synchronizer::compat::ResponseType<T>& res)
       {
         using namespace std::chrono_literals;
         auto status = Status_e::ros_status_failure;
@@ -463,8 +475,8 @@ namespace resource_management::compat {
 #endif
     };
 
-  } // namespace rm_ros
+  } // namespace rs_ros
 
-} // namespace resource_management::compat
+} // namespace resource_synchronizer::compat
 
-#endif // RM_COMPAT_ROS_H
+#endif // RS_COMPAT_ROS_H
